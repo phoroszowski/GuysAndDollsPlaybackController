@@ -25,9 +25,9 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     exit 1
 }
 
-$Computer = $env:COMPUTERNAME
-$StartBat = "C:\GuysAndDollsPlaybackController\scripts\start-show.bat"
-$BrowserBat = "C:\GuysAndDollsPlaybackController\scripts\open-controller.bat"
+$Computer   = $env:COMPUTERNAME
+$StartBat   = "$PSScriptRoot\start-show.bat"
+$BrowserBat = "$PSScriptRoot\open-controller.bat"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Task 1: ShowAppServer — launches Node.js server at login (all machines)
@@ -116,7 +116,6 @@ Write-Host "  Tasks registered. Verify in Task Scheduler:" -ForegroundColor Yell
 Write-Host "   - ShowAppServer (all machines)"
 if ($Master) { Write-Host "   - ShowAppBrowser (master)" }
 Write-Host ""
-Write-Host "  Next: copy start-show.bat to C:\ShowApp\"
-Write-Host "  Then reboot and confirm the server starts."
+Write-Host "  Reboot and confirm the server starts."
 Write-Host "======================================================" -ForegroundColor Cyan
 Write-Host ""
