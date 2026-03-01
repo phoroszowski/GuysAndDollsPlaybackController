@@ -9,5 +9,5 @@
 :: VLC is launched automatically by the server on startup.
 :: ──────────────────────────────────────────────────────────────────────────
 
-cd /d C:\ShowApp\GuysAndDollsPlaybackController
-node server.js >> C:\ShowApp\server.log 2>&1
+cd /d C:\GuysAndDollsPlaybackController
+node server.js >> C:\GuysAndDollsPlaybackController\server.log 2>&1

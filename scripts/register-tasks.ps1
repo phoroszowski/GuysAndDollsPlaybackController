@@ -25,8 +25,8 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 }
 
 $Computer = $env:COMPUTERNAME
-$StartBat = "C:\GuysAndDollsPlaybackController\start-show.bat"
-$BrowserBat = "C:\GuysAndDollsPlaybackController\open-controller.bat"
+$StartBat = "C:\GuysAndDollsPlaybackController\scripts\start-show.bat"
+$BrowserBat = "C:\GuysAndDollsPlaybackController\scripts\open-controller.bat"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Task 1: ShowAppServer — launches Node.js server at login (all machines)
