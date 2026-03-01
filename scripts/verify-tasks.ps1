@@ -114,7 +114,8 @@ if (Test-Path $startBat) {
 }
 
 # Check Node.js is available
-$nodePath = (Get-Command node -ErrorAction SilentlyContinue)?.Source
+$nodeCmd  = Get-Command node -ErrorAction SilentlyContinue
+$nodePath = if ($nodeCmd) { $nodeCmd.Source } else { $null }
 if ($nodePath) {
     $nodeVer = & node --version 2>&1
     Write-Host "  [OK] Node.js $nodeVer at $nodePath" -ForegroundColor Green
