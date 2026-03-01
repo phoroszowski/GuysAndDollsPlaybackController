@@ -1,0 +1,14 @@
+{
+  "machineId": "B",
+  "role": "worker",
+  "serverPort": 3000,
+  "vlc": {
+    "executablePath": "C:\\Program Files\\VideoLAN\\VLC\\vlc.exe",
+    "httpHost": "127.0.0.1",
+    "httpPort": 8081,
+    "httpPassword": "vlcpass",
+    "videoDirectory": "C:\\ShowMedia",
+    "screenNumber": 1
+  },
+  "workers": {}
+}

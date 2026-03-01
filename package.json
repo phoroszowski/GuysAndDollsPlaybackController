@@ -1,0 +1,13 @@
+{
+  "name": "guys-and-dolls-playback-controller",
+  "version": "1.0.0",
+  "description": "Theater video playback controller for Guys and Dolls production",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@hapi/hapi": "^21.3.0",
+    "@hapi/inert": "^7.1.0"
+  }
+}

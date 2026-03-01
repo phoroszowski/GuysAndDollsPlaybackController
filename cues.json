@@ -1,0 +1,70 @@
+{
+  "cues": [
+    {
+      "id": 1,
+      "label": "Preshow Loop",
+      "target": "A",
+      "action": "load",
+      "file": "DancingMaracasPosterv2.mp4",
+      "notes": "Load before house opens. Hit GO on cue 2 when ready to start."
+    },
+    {
+      "id": 2,
+      "label": "Preshow — Play",
+      "target": "A",
+      "action": "play",
+      "notes": "Start preshow loop playing",
+      "loop": true
+    },
+    {
+      "id": 3,
+      "label": "Preshow — Stop",
+      "target": "A",
+      "action": "stop"
+    },
+    {
+      "id": 4,
+      "label": "Act 1 — Load Opening",
+      "target": "BC",
+      "action": "load",
+      "file": "act1_opening.mp4",
+      "notes": "Load while preshow is still playing. Video cues to first frame."
+    },
+    {
+      "id": 5,
+      "label": "Act 1 — Play Opening",
+      "target": "BC",
+      "action": "play",
+      "notes": "Hit on conductor downbeat",
+      "loop": true
+    },
+    {
+      "id": 6,
+      "label": "Act 1 — Stop",
+      "target": "BC",
+      "action": "stop"
+    },
+    {
+      "id": 7,
+      "label": "Main Flight Load",
+      "target": "A",
+      "action": "load",
+      "file": "MainMapFlightV2.mp4",
+      "notes": "Load while preshow is still playing. Video cues to first frame."
+    },
+    {
+      "id": 8,
+      "label": "Main Flight Play",
+      "target": "A",
+      "action": "play",
+      "notes": "Hit on conductor downbeat",
+      "loop": false
+    },
+    {
+      "id": 9,
+      "label": "Main Flight — Stop",
+      "target": "A",
+      "action": "stop"
+    }
+  ]
+}
