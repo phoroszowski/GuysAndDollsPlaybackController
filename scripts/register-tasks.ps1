@@ -13,7 +13,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 param(
-    [string]$Username   = "GuysAndDollsPlaybackController",
+    [string]$Username   = $env:USERNAME,
     [string]$ConfigFile = "config.json",
     [switch]$Master
 )
