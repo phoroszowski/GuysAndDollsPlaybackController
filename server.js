@@ -35,8 +35,9 @@ async function start() {
     if (skip) return;
 
     const status = request.response?.statusCode ?? '?';
-    const body   = request.payload && Object.keys(request.payload).length
-      ? ' ' + JSON.stringify(request.payload)
+    const p      = request.payload;
+    const body   = p && typeof p === 'object' && !Buffer.isBuffer(p) && typeof p.pipe !== 'function' && Object.keys(p).length
+      ? ' ' + JSON.stringify(p)
       : '';
     console.log(`[${new Date().toLocaleTimeString()}] ${request.method.toUpperCase()} ${request.path}${body} → ${status}`);
   });

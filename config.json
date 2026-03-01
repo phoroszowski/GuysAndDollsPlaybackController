@@ -8,10 +8,10 @@
     "httpPort": 8081,
     "httpPassword": "vlcpass",
     "videoDirectory": "D:\\ShowMedia\\",
-    "screenNumber": 1
+    "screenNumber": 0
   },
   "workers": {
-    "B": { "host": "192.168.1.101", "port": 3000 },
+    "B": { "host": "192.168.2.76", "port": 3000 },
     "C": { "host": "192.168.1.102", "port": 3000 }
   }
 }

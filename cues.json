@@ -25,7 +25,7 @@
     {
       "id": 4,
       "label": "Act 1 — Load Opening",
-      "target": "BC",
+      "target": "B",
       "action": "load",
       "file": "act1_opening.mp4",
       "notes": "Load while preshow is still playing. Video cues to first frame."
@@ -33,7 +33,7 @@
     {
       "id": 5,
       "label": "Act 1 — Play Opening",
-      "target": "BC",
+      "target": "B",
       "action": "play",
       "notes": "Hit on conductor downbeat",
       "loop": true
@@ -41,7 +41,7 @@
     {
       "id": 6,
       "label": "Act 1 — Stop",
-      "target": "BC",
+      "target": "B",
       "action": "stop"
     },
     {
