@@ -11,8 +11,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 param(
-    [string]$Username = "Show",
-    [string]$Password = "ShowPass1"
+    [string]$Username = "GuysAndDolls",
+    [string]$Password = "PHS"
 )
 
 # ── Guard: must be Administrator ─────────────────────────────────────────────
