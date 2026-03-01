@@ -40,6 +40,13 @@ $ServerXml = @"
   <RegistrationInfo>
     <Description>Starts the Guys and Dolls Playback Controller at login</Description>
   </RegistrationInfo>
+  <Principals>
+    <Principal id="Author">
+      <UserId>$Computer\$Username</UserId>
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
   <Triggers>
     <LogonTrigger>
       <Enabled>true</Enabled>
@@ -81,6 +88,13 @@ if ($Master) {
   <RegistrationInfo>
     <Description>Opens Chrome to the show controller UI after the server starts</Description>
   </RegistrationInfo>
+  <Principals>
+    <Principal id="Author">
+      <UserId>$Computer\$Username</UserId>
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
   <Triggers>
     <LogonTrigger>
       <Enabled>true</Enabled>
