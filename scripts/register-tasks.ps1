@@ -39,8 +39,7 @@ Write-Host ""
 # ─────────────────────────────────────────────────────────────────────────────
 Write-Host "Registering task: ShowAppServer..." -NoNewline
 
-$serverArgument = "-WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -Command " +
-                  "\"Start-Process '$StartBat' -ArgumentList '$ConfigFile' -WindowStyle Hidden\""
+$serverArgument = "-WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -Command `"Start-Process '$StartBat' -ArgumentList '$ConfigFile' -WindowStyle Hidden`""
 
 $serverAction   = New-ScheduledTaskAction `
                       -Execute  "powershell.exe" `
