@@ -1,0 +1,6 @@
+New-NetFirewallRule -DisplayName "Allow Port 3000 All Profiles" `
+  -Direction Inbound `
+  -Protocol TCP `
+  -LocalPort 3000 `
+  -Action Allow `
+  -Profile Any
