@@ -2,6 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Shows the current state of all Show App Task Scheduler entries.
 # Run from the project folder — does NOT require Administrator.
+# Compatible with PowerShell 5.1 and later.
 #
 # Usage:
 #   scripts\verify-tasks.ps1
@@ -15,7 +16,7 @@ function Show-Task {
     $task = Get-ScheduledTask -TaskName $Name -ErrorAction SilentlyContinue
     if (-not $task) {
         Write-Host "  [$Name]" -ForegroundColor Yellow
-        Write-Host "    NOT FOUND — run register-tasks.ps1 to create it" -ForegroundColor Red
+        Write-Host "    NOT FOUND - run register-tasks.ps1 to create it" -ForegroundColor Red
         Write-Host ""
         return
     }
@@ -23,39 +24,37 @@ function Show-Task {
     $info = Get-ScheduledTaskInfo -TaskName $Name -ErrorAction SilentlyContinue
 
     # State colour
-    $stateColor = switch ($task.State) {
-        "Ready"    { "Green"  }
-        "Running"  { "Cyan"   }
-        "Disabled" { "Red"    }
-        default    { "Yellow" }
-    }
+    if     ($task.State -eq "Ready")    { $stateColor = "Green"  }
+    elseif ($task.State -eq "Running")  { $stateColor = "Cyan"   }
+    elseif ($task.State -eq "Disabled") { $stateColor = "Red"    }
+    else                                { $stateColor = "Yellow" }
 
     Write-Host "  [$Name]" -ForegroundColor Cyan
     Write-Host "    State       : " -NoNewline
     Write-Host $task.State -ForegroundColor $stateColor
 
-    # Trigger — who does it fire for?
+    # Trigger
     foreach ($trigger in $task.Triggers) {
-        $type = $trigger.CimClass.CimClassName -replace "MSFT_Task", ""
-        $user = if ($trigger.UserId) { $trigger.UserId } else { "(any user)" }
-        $delay = if ($trigger.Delay) { "  delay $($trigger.Delay)" } else { "" }
-        Write-Host "    Trigger     : $type — $user$delay"
+        $type  = $trigger.CimClass.CimClassName -replace "MSFT_Task", ""
+        if ($trigger.UserId) { $user = $trigger.UserId } else { $user = "(any user)" }
+        if ($trigger.Delay)  { $delay = "  delay $($trigger.Delay)" } else { $delay = "" }
+        Write-Host "    Trigger     : $type - $user$delay"
     }
 
-    # Action — show command + arguments so we can see the config file
+    # Action
     foreach ($action in $task.Actions) {
         Write-Host "    Command     : $($action.Execute)"
         if ($action.Arguments) {
             Write-Host "    Arguments   : $($action.Arguments)"
 
-            # Pull out the config file from the -ArgumentList value if present
+            # Extract the config file from -ArgumentList if present
             if ($action.Arguments -match "-ArgumentList\s+'([^']+)'") {
-                $configFile = $Matches[1]
+                $cfgFile = $Matches[1]
                 Write-Host "    Config file : " -NoNewline
-                if ($configFile -eq "config.json") {
-                    Write-Host $configFile -ForegroundColor Green
+                if ($cfgFile -eq "config.json") {
+                    Write-Host $cfgFile -ForegroundColor Green
                 } else {
-                    Write-Host $configFile -ForegroundColor Cyan
+                    Write-Host $cfgFile -ForegroundColor Cyan
                 }
             }
         }
@@ -63,19 +62,26 @@ function Show-Task {
 
     # Run history
     if ($info) {
-        $lastRun  = if ($info.LastRunTime  -and $info.LastRunTime  -gt [datetime]"2000-01-01") { $info.LastRunTime.ToString("yyyy-MM-dd HH:mm:ss")  } else { "never" }
-        $lastCode = $info.LastTaskResult
-        $nextRun  = if ($info.NextRunTime  -and $info.NextRunTime  -gt [datetime]"2000-01-01") { $info.NextRunTime.ToString("yyyy-MM-dd HH:mm:ss")  } else { "n/a"   }
-
-        $codeColor = if ($lastCode -eq 0) { "Green" } elseif ($lastCode -eq 267011) { "Yellow" } else { "Red" }
-        $codeNote  = switch ($lastCode) {
-            0       { "Success" }
-            267011  { "Task has not yet run" }
-            267009  { "Task is currently running" }
-            default { "Error 0x{0:X}" -f $lastCode }
+        if ($info.LastRunTime -and $info.LastRunTime -gt [datetime]"2000-01-01") {
+            $lastRun = $info.LastRunTime.ToString("yyyy-MM-dd HH:mm:ss")
+        } else {
+            $lastRun = "never"
         }
 
-        Write-Host "    Last run    : $lastRun  ($codeNote)" -ForegroundColor (if ($lastCode -eq 0) { "White" } else { $codeColor })
+        $lastCode = $info.LastTaskResult
+
+        if ($info.NextRunTime -and $info.NextRunTime -gt [datetime]"2000-01-01") {
+            $nextRun = $info.NextRunTime.ToString("yyyy-MM-dd HH:mm:ss")
+        } else {
+            $nextRun = "n/a"
+        }
+
+        if     ($lastCode -eq 0)      { $codeNote = "Success";               $codeColor = "Green"  }
+        elseif ($lastCode -eq 267011) { $codeNote = "Task has not yet run";  $codeColor = "Yellow" }
+        elseif ($lastCode -eq 267009) { $codeNote = "Task is currently running"; $codeColor = "Cyan" }
+        else                          { $codeNote = ("Error 0x{0:X}" -f $lastCode); $codeColor = "Red" }
+
+        Write-Host "    Last run    : $lastRun  ($codeNote)" -ForegroundColor $codeColor
         Write-Host "    Next run    : $nextRun"
     }
 
@@ -84,7 +90,7 @@ function Show-Task {
 
 # ── Header ────────────────────────────────────────────────────────────────────
 Write-Host ""
-Write-Host "=== Show App — Task Scheduler Verification ===" -ForegroundColor Cyan
+Write-Host "=== Show App - Task Scheduler Verification ===" -ForegroundColor Cyan
 Write-Host "  Computer : $env:COMPUTERNAME"
 Write-Host "  Time     : $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 Write-Host ""
@@ -97,7 +103,7 @@ foreach ($name in $TaskNames) {
 Write-Host "=== Sanity Checks ===" -ForegroundColor Cyan
 Write-Host ""
 
-# Check project folder exists
+# Project folder
 $projectDir = "C:\GuysAndDollsPlaybackController"
 if (Test-Path $projectDir) {
     Write-Host "  [OK] Project folder exists: $projectDir" -ForegroundColor Green
@@ -105,7 +111,7 @@ if (Test-Path $projectDir) {
     Write-Host "  [!!] Project folder NOT found: $projectDir" -ForegroundColor Red
 }
 
-# Check start-show.bat exists in scripts/
+# start-show.bat
 $startBat = "$projectDir\scripts\start-show.bat"
 if (Test-Path $startBat) {
     Write-Host "  [OK] start-show.bat found" -ForegroundColor Green
@@ -113,17 +119,17 @@ if (Test-Path $startBat) {
     Write-Host "  [!!] start-show.bat NOT found at $startBat" -ForegroundColor Red
 }
 
-# Check Node.js is available
-$nodeCmd  = Get-Command node -ErrorAction SilentlyContinue
-$nodePath = if ($nodeCmd) { $nodeCmd.Source } else { $null }
-if ($nodePath) {
-    $nodeVer = & node --version 2>&1
+# Node.js
+$nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+if ($nodeCmd) {
+    $nodePath = $nodeCmd.Source
+    $nodeVer  = & node --version 2>&1
     Write-Host "  [OK] Node.js $nodeVer at $nodePath" -ForegroundColor Green
 } else {
     Write-Host "  [!!] Node.js not found in PATH" -ForegroundColor Red
 }
 
-# Check VLC is installed at the default path
+# VLC
 $vlcPath = "C:\Program Files\VideoLAN\VLC\vlc.exe"
 if (Test-Path $vlcPath) {
     Write-Host "  [OK] VLC found at $vlcPath" -ForegroundColor Green
@@ -131,11 +137,12 @@ if (Test-Path $vlcPath) {
     Write-Host "  [!!] VLC not found at $vlcPath" -ForegroundColor Yellow
 }
 
-# Check server.log exists and show tail
+# server.log
 $logFile = "$projectDir\server.log"
 if (Test-Path $logFile) {
     $logSize = (Get-Item $logFile).Length
-    Write-Host "  [OK] server.log exists ($([math]::Round($logSize/1KB, 1)) KB)" -ForegroundColor Green
+    $logKB   = [math]::Round($logSize / 1KB, 1)
+    Write-Host "  [OK] server.log exists ($logKB KB)" -ForegroundColor Green
     Write-Host ""
     Write-Host "--- Last 5 lines of server.log ---" -ForegroundColor DarkGray
     Get-Content $logFile -Tail 5 | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
