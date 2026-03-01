@@ -306,5 +306,12 @@ details[open] > summary::before { content: '▼'; }
 }
 .loop-toggle input { cursor: pointer; accent-color: var(--accent-go); width: 16px; height: 16px; }
 
+/* ── Sync result ── */
+.sync-result  { padding: 4px 14px 10px; font-size: 0.82rem; }
+.sync-status  { color: var(--text-muted); font-style: italic; }
+.sync-warn    { color: var(--accent-warn); }
+.sync-worker  { margin-top: 5px; }
+.sync-error   { color: #ff6b6b; margin-left: 1em; margin-top: 2px; }
+
 /* ── Misc ── */
 .divider { height: 1px; background: var(--border); margin: 0 14px; }

@@ -18,10 +18,15 @@ async function start() {
   // VLC control routes — registered on every machine
   server.route(require('./routes/vlc'));
 
+  // File sync routes — workers need the upload endpoint; master also gets the sync endpoint
+  const { workerRoutes, masterRoutes } = require('./routes/files');
+  server.route(workerRoutes);
+
   // Master-only routes
   if (config.role === 'master') {
     server.route(require('./routes/proxy'));
     server.route(require('./routes/ui'));
+    server.route(masterRoutes);
   }
 
   // Log incoming commands (skip noisy status polls)

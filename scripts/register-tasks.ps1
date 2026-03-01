@@ -12,8 +12,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 param(
-    [string]$Username  = "Show",
-    [string]$AppDir    = "C:\ShowApp\GuysAndDollsPlaybackController",
+    [string]$Username  = "GuysAndDolls",
+    [string]$AppDir    = "C:\GusyAdnDolls\",
     [switch]$Master
 )
 
@@ -25,8 +25,8 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 }
 
 $Computer = $env:COMPUTERNAME
-$StartBat = "C:\ShowApp\start-show.bat"
-$BrowserBat = "C:\ShowApp\open-controller.bat"
+$StartBat = "C:\GuysAndDolls\start-show.bat"
+$BrowserBat = "C:\GuysAndDolls\open-controller.bat"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Task 1: ShowAppServer — launches Node.js server at login (all machines)

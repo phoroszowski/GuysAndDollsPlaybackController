@@ -140,6 +140,35 @@ async function reloadCues() {
   }
 }
 
+async function syncFiles() {
+  const resultEl = document.getElementById('sync-result');
+  clearError('err-admin');
+  resultEl.innerHTML = '<span class="sync-status">Syncing\u2026 this may take a while for large files</span>';
+
+  try {
+    const result = await apiFetch('/files/sync', 'POST', {});
+
+    if (result.fileCount === 0) {
+      resultEl.innerHTML = '<span class="sync-status sync-warn">No files found in master videoDirectory.</span>';
+      return;
+    }
+
+    const rows = Object.entries(result.results).map(([id, r]) => {
+      const icon = r.ok ? '\u2705' : '\u274c';
+      const summary = `${r.transferred.length} of ${result.fileCount} file(s) transferred`;
+      const errors = r.errors.map((e) =>
+        `<div class="sync-error">&nbsp;&nbsp;${escHtml(e.file)}: ${escHtml(e.error)}</div>`
+      ).join('');
+      return `<div class="sync-worker">${icon} Worker ${id} \u2014 ${summary}${errors}</div>`;
+    });
+
+    resultEl.innerHTML = rows.join('');
+  } catch (e) {
+    resultEl.innerHTML = '';
+    showError('err-admin', 'Sync failed: ' + e.message);
+  }
+}
+
 async function launchVlc(machineId) {
   clearError('err-admin');
   try {
