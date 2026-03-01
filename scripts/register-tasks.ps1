@@ -6,14 +6,15 @@
 # On Machine A (master) pass -Master to also register the browser task.
 #
 # Usage:
-#   scripts\register-tasks.ps1                  (workers B and C)
-#   scripts\register-tasks.ps1 -Master          (machine A)
-#   scripts\register-tasks.ps1 -Username MyUser (override account name)
+#   scripts\register-tasks.ps1 -ConfigFile config.worker-B.json   (machine B)
+#   scripts\register-tasks.ps1 -ConfigFile config.worker-C.json   (machine C)
+#   scripts\register-tasks.ps1 -Master                             (machine A)
+#   scripts\register-tasks.ps1 -Master -Username MyUser            (override account name)
 # ─────────────────────────────────────────────────────────────────────────────
 
 param(
-    [string]$Username  = "GuysAndDollsPlaybackController",
-    [string]$AppDir    = "C:\GuysAndDollsPlaybackController\",
+    [string]$Username   = "GuysAndDollsPlaybackController",
+    [string]$ConfigFile = "config.json",
     [switch]$Master
 )
 
@@ -56,7 +57,7 @@ $ServerXml = @"
   <Actions>
     <Exec>
       <Command>powershell.exe</Command>
-      <Arguments>-WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -Command "Start-Process '$StartBat' -WindowStyle Hidden"</Arguments>
+      <Arguments>-WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -Command "Start-Process '$StartBat' -ArgumentList '$ConfigFile' -WindowStyle Hidden"</Arguments>
     </Exec>
   </Actions>
 </Task>

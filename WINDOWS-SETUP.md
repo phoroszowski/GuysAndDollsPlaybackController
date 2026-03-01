@@ -17,14 +17,14 @@ page in the browser automatically.
 
 ### Scripts in this repo
 
-All setup scripts live in the `scripts/` directory. Copy them to a USB stick to run on
-each machine.
+All setup scripts live in the `scripts/` directory. Run them directly from the project
+folder — no need to copy them anywhere.
 
 | Script | Purpose | Machines |
 |---|---|---|
 | `setup-autologin.ps1` | Configures Windows for auto-login | All |
-| `register-tasks.ps1` | Registers Task Scheduler entries | All (`-Master` flag for A) |
-| `start-show.bat` | Startup launcher — copy to `C:\ShowApp\` | All |
+| `register-tasks.ps1` | Registers Task Scheduler entries | All (flags differ per machine) |
+| `start-show.bat` | Startup launcher (called by Task Scheduler) | All |
 | `open-controller.bat` | Opens Chrome to the UI after boot | A only |
 | `disable-sleep.ps1` | Disables sleep/hibernate | All |
 
@@ -36,7 +36,7 @@ Install on every machine before following this guide:
 
 - **Node.js 18 or later** — https://nodejs.org (choose the LTS installer, all defaults are fine)
 - **VLC media player** — https://www.videolan.org (install to the default path)
-- **This application** — copy the project folder to `C:\ShowApp\` on each machine
+- **This application** — copy the project folder to `C:\GuysAndDollsPlaybackController\` on each machine
 
 Verify Node.js installed correctly: open a Command Prompt and run `node --version`.
 You should see `v18.x.x` or higher.
@@ -78,10 +78,13 @@ every logoff and auto-login stops working after the first reboot. The script han
 
 1. Open `scripts\setup-autologin.ps1` in a text editor
 2. Edit the `$Username` and `$Password` default values at the top to match your Show account
-3. Copy it to the machine (USB stick works fine)
-4. Right-click the file → **Run with PowerShell** — or open an **Administrator PowerShell**
-   and run: `powershell -ExecutionPolicy Bypass -File setup-autologin.ps1`
-5. **Reboot the machine** when the script completes
+3. Open an **Administrator PowerShell** in the project folder and run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\setup-autologin.ps1
+```
+
+4. **Reboot the machine** when the script completes
 
 After reboot the machine should log into the Show account automatically with no prompts.
 
@@ -110,78 +113,82 @@ The script performs these steps in order:
 
 ## Step 3 — Install the Application
 
-Copy the project folder onto each machine. The recommended location is:
+Copy the project folder onto each machine:
 
 ```
-C:\ShowApp\GuysAndDollsPlaybackController\
+C:\GuysAndDollsPlaybackController\
 ```
 
 Then install Node.js dependencies. Open an **Administrator Command Prompt** and run:
 
 ```cmd
-cd C:\ShowApp\GuysAndDollsPlaybackController
+cd C:\GuysAndDollsPlaybackController
 npm install
 ```
 
-### Per-Machine Config Files
+### Config Files
 
-Each machine uses its own config file. The application loads `config.json` by default.
+All three config files are already in the project. Each machine selects its own config
+via a command-line argument at startup — **no renaming or copying is needed**.
 
-**Machine A (Master)** — `config.json` is already the master config. Verify the IP
-addresses for B and C match your network before deploying.
+| Machine | Config file used | Role |
+|---|---|---|
+| A | `config.json` | Master — serves UI, proxies to B and C |
+| B | `config.worker-B.json` | Worker |
+| C | `config.worker-C.json` | Worker |
 
-**Machine B** — copy the worker config over:
+Before deploying Machine A, open `config.json` and verify the IP addresses for B and C
+match your actual network:
 
-```cmd
-copy C:\ShowApp\GuysAndDollsPlaybackController\config.worker-B.json C:\ShowApp\GuysAndDollsPlaybackController\config.json
+```json
+"workers": {
+  "B": { "host": "192.168.1.101", "port": 3000 },
+  "C": { "host": "192.168.1.102", "port": 3000 }
+}
 ```
 
-**Machine C** — same using `config.worker-C.json`.
-
-> `screenNumber: 1` means the second display (0-indexed). If VLC launches on the laptop
-> screen instead of the projector, change this to match your display order.
+> `screenNumber: 1` in each config means the second display (0-indexed). If VLC launches
+> on the laptop screen instead of the projector, change this to `0`.
 
 ---
 
-## Step 4 — Copy the Startup Script
-
-Copy `scripts\start-show.bat` from this repo to `C:\ShowApp\start-show.bat` on the machine.
-
-This batch file starts the Node server and logs all output to `C:\ShowApp\server.log`.
-
-> The Node server auto-starts VLC when it launches — no separate VLC startup entry needed.
-
-**Machine A only:** also copy `scripts\open-controller.bat` to `C:\ShowApp\open-controller.bat`.
-This opens Chrome in kiosk mode pointing at the show controller UI, 10 seconds after login.
-To exit kiosk mode during setup: **Alt+F4**.
-
----
-
-## Step 5 — Register Task Scheduler Entries
+## Step 4 — Register Task Scheduler Entries
 
 The server must run in the **user's login session** (not as a Windows service) because VLC
 needs a display. Task Scheduler with an "At log on" trigger is the correct approach.
 
-Open an **Administrator PowerShell** window and run from the project folder:
+Each machine passes a different `-ConfigFile` argument so the server starts with the right
+config. Open an **Administrator PowerShell** in the project folder and run the command for
+that machine:
 
-**Workers B and C:**
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\register-tasks.ps1
-```
-
-**Master (Machine A):**
+**Machine A (master):**
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\register-tasks.ps1 -Master
 ```
 
-The `-Master` flag also registers the `ShowAppBrowser` task that opens Chrome to the UI.
-
-To override the username if your Show account has a different name:
+**Machine B:**
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\register-tasks.ps1 -Username MyShowAccount
+powershell -ExecutionPolicy Bypass -File scripts\register-tasks.ps1 -ConfigFile config.worker-B.json
 ```
 
-### Verify the Task Was Created
+**Machine C:**
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\register-tasks.ps1 -ConfigFile config.worker-C.json
+```
+
+If your Show account has a different name, add `-Username YourAccountName` to any of the
+above commands.
+
+The `-Master` flag also registers the `ShowAppBrowser` task that opens Chrome to the UI
+10 seconds after login (Machine A only).
+
+### What the task does
+
+Task Scheduler runs at login → calls `scripts\start-show.bat <config-file>` → Node starts
+as `node server.js config.worker-B.json` → server loads the correct config → VLC launches.
+All Node output is logged to `C:\GuysAndDollsPlaybackController\server.log`.
+
+### Verify the task was created
 
 Open Task Scheduler (search "Task Scheduler" in Start) and look for **ShowAppServer**
 under **Task Scheduler Library**. It should show a trigger of "At log on".
@@ -192,7 +199,7 @@ under **Task Scheduler Library**. It should show a trigger of "At log on".
 
 ---
 
-## Step 6 — BIOS / Power Settings
+## Step 5 — BIOS / Power Settings
 
 These settings ensure the machine comes back up automatically after a power outage.
 
@@ -228,9 +235,9 @@ Re-enable after the run.
 
 ---
 
-## Step 7 — Open Firewall Port
+## Step 6 — Open Firewall Port
 
-If Windows Firewall blocks connections from the phone, run this on Machine A and the workers:
+If Windows Firewall blocks connections from the phone, run this on all three machines:
 
 ```powershell
 New-NetFirewallRule -DisplayName "ShowApp Node" -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow
@@ -238,13 +245,13 @@ New-NetFirewallRule -DisplayName "ShowApp Node" -Direction Inbound -Protocol TCP
 
 ---
 
-## Step 8 — Test the Full Boot Sequence
+## Step 7 — Test the Full Boot Sequence
 
 1. Reboot the machine and step away — do not touch keyboard or mouse
 2. Machine should: boot → log into Show account automatically → wait 5 seconds → start
    the Node server in the background → VLC launches (fullscreen on the projector)
 3. On Machine A: open a browser on your phone and navigate to `http://<MachineA-IP>:3000`
-4. Check `C:\ShowApp\server.log` if the server did not start
+4. Check `C:\GuysAndDollsPlaybackController\server.log` if the server did not start
 
 To find Machine A's IP address: open a Command Prompt and run `ipconfig`. Look for the
 IPv4 address on your Wi-Fi or Ethernet adapter.
@@ -254,22 +261,21 @@ IPv4 address on your Wi-Fi or Ethernet adapter.
 ## Per-Machine Setup Checklist
 
 ```
-Machine A (Master)                     Machine B (Worker)       Machine C (Worker)
-─────────────────────────────────────  ───────────────────────  ───────────────────────
-[ ] Node.js installed                  [ ] Node.js installed    [ ] Node.js installed
-[ ] VLC installed                      [ ] VLC installed        [ ] VLC installed
-[ ] Project copied to C:\ShowApp\      [ ] Project copied       [ ] Project copied
-[ ] npm install run                    [ ] npm install run      [ ] npm install run
-[ ] config.json (master version)       [ ] config.json (B)      [ ] config.json (C)
-[ ] setup-autologin.ps1 run            [ ] autologin script     [ ] autologin script
-[ ] Rebooted after autologin script    [ ] Rebooted             [ ] Rebooted
-[ ] start-show.bat → C:\ShowApp\       [ ] start-show.bat       [ ] start-show.bat
-[ ] open-controller.bat → C:\ShowApp\  (not needed)             (not needed)
-[ ] register-tasks.ps1 -Master run     [ ] register-tasks.ps1   [ ] register-tasks.ps1
-[ ] disable-sleep.ps1 run             [ ] disable-sleep.ps1    [ ] disable-sleep.ps1
-[ ] Firewall rule added               [ ] Firewall rule         [ ] Firewall rule
-[ ] BIOS AC recovery set              [ ] BIOS AC recovery      [ ] BIOS AC recovery
-[ ] Full boot test passed             [ ] Boot test passed      [ ] Boot test passed
+Machine A (Master)                          Machine B (Worker)            Machine C (Worker)
+──────────────────────────────────────────  ────────────────────────────  ────────────────────────────
+[ ] Node.js installed                       [ ] Node.js installed         [ ] Node.js installed
+[ ] VLC installed                           [ ] VLC installed             [ ] VLC installed
+[ ] Project at C:\GuysAndDollsPlayback...\  [ ] Project copied            [ ] Project copied
+[ ] npm install run                         [ ] npm install run           [ ] npm install run
+[ ] config.json — IPs for B & C verified    (config.worker-B.json ready)  (config.worker-C.json ready)
+[ ] setup-autologin.ps1 run                 [ ] autologin script run      [ ] autologin script run
+[ ] Rebooted after autologin script         [ ] Rebooted                  [ ] Rebooted
+[ ] register-tasks.ps1 -Master run          [ ] register-tasks.ps1        [ ] register-tasks.ps1
+                                                -ConfigFile ...B.json          -ConfigFile ...C.json
+[ ] disable-sleep.ps1 run                   [ ] disable-sleep.ps1 run    [ ] disable-sleep.ps1 run
+[ ] Firewall rule added                     [ ] Firewall rule added       [ ] Firewall rule added
+[ ] BIOS AC recovery set                    [ ] BIOS AC recovery set      [ ] BIOS AC recovery set
+[ ] Full boot test passed                   [ ] Boot test passed          [ ] Boot test passed
 [ ] Phone can reach web UI at :3000
 ```
 
@@ -294,14 +300,20 @@ deleting the Winlogon keys. Re-run `setup-autologin.ps1` and verify it completes
 
 ### Server starts but VLC doesn't launch
 
-- Check `C:\ShowApp\server.log` for VLC launch errors
-- Verify the VLC path in `config.json` exactly matches the install location:
+- Check `C:\GuysAndDollsPlaybackController\server.log` for VLC launch errors
+- Verify the VLC path in the config file exactly matches the install location:
   `C:\Program Files\VideoLAN\VLC\vlc.exe`
 - Confirm the Show account has read access to the video directory
 
+### Server starts with the wrong config / wrong machine ID
+
+- Check the task in Task Scheduler — open **ShowAppServer** → Actions tab → confirm the
+  Arguments field contains the correct `-ConfigFile` value for that machine
+- Re-run `register-tasks.ps1` with the correct `-ConfigFile` argument to fix it
+
 ### VLC launches on the wrong screen
 
-Change `screenNumber` in `config.json`:
+Change `screenNumber` in the machine's config file:
 - `0` = primary display (laptop screen)
 - `1` = second display (projector)
 
@@ -322,13 +334,13 @@ VLC's HTTP API takes ~2 seconds to become available after launch. If still red a
 ### Reading server logs
 
 ```cmd
-type C:\ShowApp\server.log
+type C:\GuysAndDollsPlaybackController\server.log
 ```
 
 Live tail (PowerShell):
 
 ```powershell
-Get-Content C:\ShowApp\server.log -Wait
+Get-Content C:\GuysAndDollsPlaybackController\server.log -Wait
 ```
 
 ---
