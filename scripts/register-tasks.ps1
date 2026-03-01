@@ -28,52 +28,46 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 $Computer   = $env:COMPUTERNAME
 $StartBat   = "$PSScriptRoot\start-show.bat"
 $BrowserBat = "$PSScriptRoot\open-controller.bat"
+$UserId     = "$Computer\$Username"
+
+Write-Host ""
+Write-Host "Registering tasks for user: $UserId" -ForegroundColor Cyan
+Write-Host ""
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Task 1: ShowAppServer — launches Node.js server at login (all machines)
 # ─────────────────────────────────────────────────────────────────────────────
 Write-Host "Registering task: ShowAppServer..." -NoNewline
 
-$ServerXml = @"
-<?xml version="1.0" encoding="UTF-16"?>
-<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
-  <RegistrationInfo>
-    <Description>Starts the Guys and Dolls Playback Controller at login</Description>
-  </RegistrationInfo>
-  <Principals>
-    <Principal id="Author">
-      <UserId>$Computer\$Username</UserId>
-      <LogonType>InteractiveToken</LogonType>
-      <RunLevel>LeastPrivilege</RunLevel>
-    </Principal>
-  </Principals>
-  <Triggers>
-    <LogonTrigger>
-      <Enabled>true</Enabled>
-      <UserId>$Computer\$Username</UserId>
-      <Delay>PT5S</Delay>
-    </LogonTrigger>
-  </Triggers>
-  <Settings>
-    <Hidden>true</Hidden>
-    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
-    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
-    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
-    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
-  </Settings>
-  <Actions>
-    <Exec>
-      <Command>powershell.exe</Command>
-      <Arguments>-WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -Command "Start-Process '$StartBat' -ArgumentList '$ConfigFile' -WindowStyle Hidden"</Arguments>
-    </Exec>
-  </Actions>
-</Task>
-"@
+$serverArgument = "-WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -Command " +
+                  "\"Start-Process '$StartBat' -ArgumentList '$ConfigFile' -WindowStyle Hidden\""
 
-$TempXml = "$env:TEMP\ShowAppServer.xml"
-$ServerXml | Out-File -FilePath $TempXml -Encoding Unicode
-schtasks /create /tn "ShowAppServer" /xml $TempXml /f | Out-Null
-Remove-Item $TempXml
+$serverAction   = New-ScheduledTaskAction `
+                      -Execute  "powershell.exe" `
+                      -Argument $serverArgument
+
+$serverTrigger  = New-ScheduledTaskTrigger -AtLogOn -User $UserId
+
+$serverSettings = New-ScheduledTaskSettingsSet `
+                      -Hidden `
+                      -AllowStartIfOnBatteries `
+                      -DontStopIfGoingOnBatteries `
+                      -ExecutionTimeLimit (New-TimeSpan -Seconds 0) `
+                      -MultipleInstances IgnoreNew
+
+$serverPrincipal = New-ScheduledTaskPrincipal `
+                       -UserId   $UserId `
+                       -LogonType Interactive `
+                       -RunLevel Limited
+
+Register-ScheduledTask `
+    -TaskName  "ShowAppServer" `
+    -Action    $serverAction `
+    -Trigger   $serverTrigger `
+    -Settings  $serverSettings `
+    -Principal $serverPrincipal `
+    -Force | Out-Null
+
 Write-Host " OK" -ForegroundColor Green
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -82,45 +76,29 @@ Write-Host " OK" -ForegroundColor Green
 if ($Master) {
     Write-Host "Registering task: ShowAppBrowser (master only)..." -NoNewline
 
-    $BrowserXml = @"
-<?xml version="1.0" encoding="UTF-16"?>
-<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
-  <RegistrationInfo>
-    <Description>Opens Chrome to the show controller UI after the server starts</Description>
-  </RegistrationInfo>
-  <Principals>
-    <Principal id="Author">
-      <UserId>$Computer\$Username</UserId>
-      <LogonType>InteractiveToken</LogonType>
-      <RunLevel>LeastPrivilege</RunLevel>
-    </Principal>
-  </Principals>
-  <Triggers>
-    <LogonTrigger>
-      <Enabled>true</Enabled>
-      <UserId>$Computer\$Username</UserId>
-      <Delay>PT5S</Delay>
-    </LogonTrigger>
-  </Triggers>
-  <Settings>
-    <Hidden>false</Hidden>
-    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
-    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
-    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
-    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
-  </Settings>
-  <Actions>
-    <Exec>
-      <Command>$BrowserBat</Command>
-    </Exec>
-  </Actions>
-</Task>
-"@
+    $browserAction   = New-ScheduledTaskAction -Execute $BrowserBat
 
-    $TempXml = "$env:TEMP\ShowAppBrowser.xml"
-    $BrowserXml | Out-File -FilePath $TempXml -Encoding Unicode
-    schtasks /create /tn "ShowAppBrowser" /xml $TempXml /f | Out-Null
-    Remove-Item $TempXml
+    $browserTrigger  = New-ScheduledTaskTrigger -AtLogOn -User $UserId
+
+    $browserSettings = New-ScheduledTaskSettingsSet `
+                           -AllowStartIfOnBatteries `
+                           -DontStopIfGoingOnBatteries `
+                           -ExecutionTimeLimit (New-TimeSpan -Seconds 0) `
+                           -MultipleInstances IgnoreNew
+
+    $browserPrincipal = New-ScheduledTaskPrincipal `
+                            -UserId   $UserId `
+                            -LogonType Interactive `
+                            -RunLevel Limited
+
+    Register-ScheduledTask `
+        -TaskName  "ShowAppBrowser" `
+        -Action    $browserAction `
+        -Trigger   $browserTrigger `
+        -Settings  $browserSettings `
+        -Principal $browserPrincipal `
+        -Force | Out-Null
+
     Write-Host " OK" -ForegroundColor Green
 }
 
